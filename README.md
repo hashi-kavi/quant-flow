@@ -8,7 +8,8 @@ This project demonstrates quantitative finance fundamentals, numerical computing
 
 - CLI-based analysis using command-line arguments
 - Fast vectorized NumPy computations (no slow loops)
-- Technical indicators: Simple Moving Average (SMA), Bollinger Bands, Daily Returns
+- Technical indicators: Bollinger Bands, SMA, Daily Returns, RSI, MACD, EMA
+- 4-panel visualization: Price + Bands, Returns, RSI, MACD
 - Automatic chart generation using Matplotlib
 - Generated reports saved as PNG files
 - Jupyter notebook workflow for experimentation
@@ -180,6 +181,57 @@ Usage:
 - Identify abnormal market movements
 - Calculate risk metrics
 
+### Relative Strength Index (RSI)
+
+Measures the magnitude of recent price changes to evaluate overbought/oversold conditions.
+
+Formula:
+
+$$
+RSI = 100 - \left( \frac{100}{1 + RS} \right)
+$$
+
+Where `RS` = Average Gain / Average Loss over a 20-day window.
+
+Usage:
+
+- RSI > 70: Overbought (price may drop)
+- RSI < 30: Oversold (price may rise)
+- Identify potential reversal points
+
+### Moving Average Convergence Divergence (MACD)
+
+Measures trend momentum using two exponential moving averages (12-day and 26-day).
+
+Calculation:
+
+- `MACD Line` = EMA(12) - EMA(26)
+- `Signal Line` = EMA(9) of MACD Line
+- `Histogram` = MACD Line - Signal Line
+
+Usage:
+
+- MACD > Signal: Bullish momentum
+- MACD < Signal: Bearish momentum
+- Histogram crossovers indicate trend changes
+
+### Exponential Moving Average (EMA)
+
+Weights recent prices more heavily than older prices.
+
+Formula:
+
+$$
+EMA_t = \alpha \cdot P_t + (1 - \alpha) \cdot EMA_{t-1}
+$$
+
+Where `α = 2 / (window + 1)`
+
+Usage:
+
+- Used internally for MACD calculation
+- More responsive to recent price changes than SMA
+
 ## Module API Reference
 
 ### `data_loader.get_stock_data()`
@@ -251,6 +303,60 @@ returns = calculate_daily_return(prices)
 volatility = np.std(returns)
 ```
 
+### `indicators.calculate_rsi()`
+
+Signature:
+
+```python
+calculate_rsi(prices, window=20)
+```
+
+Parameters:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `prices` | `np.ndarray` | Array of close prices |
+| `window` | `int` | RSI calculation window (default: 20) |
+
+Returns:
+
+- NumPy array of RSI values (length = `len(prices) - 1`)
+
+### `indicators.calculate_macd()`
+
+Signature:
+
+```python
+calculate_macd(prices)
+```
+
+Returns:
+
+- `macd_line`: MACD line values
+- `signal_line`: Signal line (9-day EMA of MACD)
+- `histogram`: Difference between MACD and Signal
+
+All returned as NumPy arrays.
+
+### `indicators.calculate_ema()`
+
+Signature:
+
+```python
+calculate_ema(prices, window)
+```
+
+Parameters:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `prices` | `np.ndarray` | Array of prices |
+| `window` | `int` | EMA window size |
+
+Returns:
+
+- NumPy array of EMA values
+
 ## CLI Usage
 
 Run analysis for any stock.
@@ -279,37 +385,57 @@ You can use the modules directly.
 
 ```python
 from scripts.data_loader import get_stock_data
-from scripts.indicators import calculate_bollinger_bands
-from scripts.indicators import calculate_daily_return
+from scripts.indicators import (
+    calculate_bollinger_bands,
+    calculate_daily_return,
+    calculate_rsi,
+    calculate_macd
+)
 
 prices = get_stock_data("NVDA", "2024-01-01", "2026-01-01")
 
 if prices is not None:
+    # Bollinger Bands
     upper, sma, lower = calculate_bollinger_bands(prices)
+    
+    # Daily Returns
     daily_returns = calculate_daily_return(prices)
-
+    
+    # RSI
+    rsi = calculate_rsi(prices)
+    
+    # MACD
+    macd, signal, hist = calculate_macd(prices)
+    
     print("Data points:", len(prices))
     print("Max gain:", daily_returns.max())
     print("Max loss:", daily_returns.min())
+    print("Current RSI:", rsi[-1])
 ```
 
 ## Generated Report Format
 
-The CLI automatically generates a two-panel chart.
+The CLI automatically generates a four-panel chart.
 
-Top panel:
+**Panel 1: Price with Bollinger Bands**
+- Black line: Closing price
+- Blue dashed line: 20-day SMA
+- Green/Red bands: Upper/Lower Bollinger Bands (±2σ)
+- Gray region: Volatility channel
 
-- Price chart with Bollinger Bands
-- Black line -> Closing price
-- Blue dashed line -> SMA
-- Red/Green bands -> Bollinger Bands
-- Gray region -> Volatility range
+**Panel 2: Daily Returns**
+- Purple bars: Day-to-day percentage changes
+- Black horizontal line: Zero baseline
 
-Bottom panel:
+**Panel 3: RSI (Relative Strength Index)**
+- Orange line: RSI values
+- Red dashed line: Overbought threshold (70)
+- Green dashed line: Oversold threshold (30)
 
-- Daily returns
-- Purple bars -> Day-to-day returns
-- Black horizontal line -> Zero baseline
+**Panel 4: MACD (Moving Average Convergence Divergence)**
+- Blue line: MACD line
+- Red line: Signal line
+- Gray bars: Histogram (MACD - Signal)
 
 Charts are saved as:
 
@@ -348,13 +474,13 @@ Advantages:
 
 Planned features:
 
-- Relative Strength Index (RSI)
-- Moving Average Convergence Divergence (MACD)
-- Exponential Moving Average (EMA)
 - Portfolio comparison
 - Strategy backtesting engine
 - CSV / JSON export
 - Unit tests
+- Stochastic Oscillator
+- Average True Range (ATR)
+- Support/Resistance level detection
 
 ## Notes and Limitations
 

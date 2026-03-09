@@ -41,3 +41,37 @@ def calculate_daily_return(prices):
     returns = np.diff(prices)/prices[:-1]
     # Example: [100, 110, 121] → [10/100, 11/110] → [0.10, 0.10]
     return returns * 100
+#Relative Strength Index-how strong recent price movements are.Overbought (price may drop soon),Oversold (price may rise soon)
+def calculate_rsi(prices,window = 20):
+    change = np.diff(prices)
+    
+    #np.where(condition, value_if_true, value_if_false)
+    gains = np.where(change>0,change,0)
+    
+    losses = np.where(change<0,-change,0)
+
+    avg_gain = np.convolve(gains,np.ones(window)/window,mode='valid')
+    avg_loss = np.convolve(losses,np.ones(window)/window,mode='valid')
+
+    rs = avg_gain/avg_loss
+    rsi = 100-(100/(1+rs))
+    return rsi
+#Moving Average Convergence Divergence-measures trend momentum using two exponential moving averages (EMA).
+
+def calculate_ema(prices,window):
+    alpha = 2 / (window +1)
+    ema = np.zeros_like(prices)
+    ema[0] = prices[0]
+
+    for i in range(1,len(prices)):
+        ema[i]= alpha*prices[i]+(1-alpha)*ema[i-1]
+    return ema
+def calculate_macd(prices):
+    ema12 = calculate_ema(prices,12)
+    ema26 = calculate_ema(prices,26)
+
+    macd_line = ema12-ema26
+    signal_line = calculate_ema(macd_line,9)
+    histogram = macd_line - signal_line
+
+    return macd_line,signal_line,histogram
